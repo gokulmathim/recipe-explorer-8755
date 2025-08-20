@@ -1,18 +1,18 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_frontend/main.dart';
+import 'package:mobile_frontend/main.dart' as app;
 
 void main() {
-  testWidgets('App generation message displayed', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+  testWidgets('App renders login or home', (WidgetTester tester) async {
+    // Initialize the app by calling main (non-async) then pump frames.
+    app.main();
 
-    expect(find.text('mobile_frontend App is being generated...'), findsOneWidget);
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
-  });
+    // Let the widgets build and settle.
+    await tester.pumpAndSettle(const Duration(seconds: 1));
 
-  testWidgets('App bar has correct title', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
+    // Either Login (Welcome) or Home (Recipe Explorer) should be present
+    final loginTitle = find.textContaining('Welcome');
+    final homeTitle = find.text('Recipe Explorer');
 
-    expect(find.text('mobile_frontend'), findsOneWidget);
+    expect(loginTitle.evaluate().isNotEmpty || homeTitle.evaluate().isNotEmpty, true);
   });
 }

@@ -1,54 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'providers/auth_provider.dart';
+import 'providers/recipe_provider.dart';
+import 'providers/favorites_provider.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/auth/register_screen.dart';
+import 'screens/home/home_screen.dart';
+import 'screens/recipe/recipe_detail_screen.dart';
+import 'theme/app_theme.dart';
+
+// PUBLIC_INTERFACE
+Future<void> main() async {
+  /// Entry point for the Flutter app. Loads environment variables and runs the app with Providers.
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  runApp(const RecipeExplorerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class RecipeExplorerApp extends StatelessWidget {
+  const RecipeExplorerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'AI Build Tool',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'mobile_frontend'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'mobile_frontend App is being generated...',
-              style: TextStyle(fontSize: 18),
-            ),
-            SizedBox(height: 20),
-            CircularProgressIndicator(),
-          ],
+    final theme = AppTheme.buildTheme();
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProxyProvider<AuthProvider, RecipeProvider>(
+          create: (_) => RecipeProvider(),
+          update: (_, auth, recipes) => recipes!..setAuthToken(auth.token),
         ),
+      ],
+      child: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          return MaterialApp(
+            title: 'Recipe Explorer',
+            theme: theme,
+            debugShowCheckedModeBanner: false,
+            initialRoute: auth.isAuthenticated ? HomeScreen.routeName : LoginScreen.routeName,
+            routes: {
+              HomeScreen.routeName: (_) => const HomeScreen(),
+              LoginScreen.routeName: (_) => const LoginScreen(),
+              RegisterScreen.routeName: (_) => const RegisterScreen(),
+              RecipeDetailScreen.routeName: (_) => const RecipeDetailScreen(),
+            },
+          );
+        },
       ),
     );
   }
